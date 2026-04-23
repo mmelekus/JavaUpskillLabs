@@ -1,0 +1,4 @@
+# Overlays application.yml when the 'prod' profile is active
+catalog:
+    environment-label: production
+    page-size-max: 50   # tighter ceiling in production to pprotect the database

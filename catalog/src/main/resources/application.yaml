@@ -1,0 +1,14 @@
+#application.yml -- base configuration, loaded in every environment
+spring:
+    application:
+      name: catalog-service
+
+server:
+    port: 8080
+
+catalog:
+    # Pagination defaults -- these will be read via @ConfigurationProperties
+    page-size-default: 20
+    page-size-max: 100
+    # A label identifying which environment this service is  running in
+    environment-label: local

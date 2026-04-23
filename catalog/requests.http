@@ -1,0 +1,44 @@
+### List all products
+GET http://localhost:8080/api/v1/products
+
+### Get a single product (replace P001 with an actual ID from the list above)
+GET http://localhost:8080/api/v1/products/P001
+
+### Create a product
+POST http://localhost:8080/api/v1/products
+Content-Type: application/json
+
+{
+  "name": "Mechanical Keyboard",
+  "category": "ACCESSORIES",
+  "price": 129.99
+}
+
+### Delete a product
+DELETE http://localhost:8080/api/v1/products/P001
+
+### Request a product that does not exist
+GET http://localhost:8080/api/v1/products/DOES_NOT_EXIST
+
+### Expected response: 400 Not Found
+### Body should contain errorCode: "PRODUCT_NOT_FOUND"
+
+
+### All reviews for P001 (no filter -- minRating defaults to 1)
+GET http://localhost:8080/api/v1/products/P001/reviews
+
+### Only reviews rated 5 or above
+GET http://localhost:8080/api/v1/products/P001/reviews?minRating=5
+
+### Only reviews rated 4 or above
+GET http://localhost:8080/api/v1/products/P001/reviews?minRating=4
+
+### Product does not exist -- expect 404
+GET http://localhost:8080/api/v1/products/INVALID/reviews
+
+
+### v1 endpoint -- should include Deprecation and Sunset headers in the response
+GET http://localhost:8080/api/v1/products
+
+### v2 endpoint -- response body has "productCategory" instead of "category"
+GET http://localhost:8080/api/v2/products

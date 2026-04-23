@@ -1,0 +1,70 @@
+### Get all employees (getForObject)
+GET http://localhost:8080/rt/employees
+
+###
+
+### Get employee by ID (getForEntity)
+GET http://localhost:8080/rt/employees/1
+
+###
+
+### Get missing employee (should return 404)
+GET http://localhost:8080/rt/employees/99
+
+###
+
+### Get all employees (exchange with ParameterizedTypeReference)
+GET http://localhost:8080/rt/employees/exchange
+
+###
+
+### Create a new employee
+POST http://localhost:8080/rt/employees
+Content-Type: application/json
+
+{
+  "name": "Charlie",
+  "department": "HR"
+}
+
+
+### Get all employees
+GET http://localhost:8080/wc/employees
+
+###
+
+### Get employee by ID
+GET http://localhost:8080/wc/employees/1
+
+###
+
+### Create a new employee
+POST http://localhost:8080/wc/employees
+Content-Type: application/json
+
+{
+  "name": "Dana",
+  "department": "Legal"
+}
+
+### Get missing employee - should return 404, not 500
+GET http://localhost:8080/wc/employees/99
+
+
+### Resilient endpoint - the /api/flaky stub currently returns 503.
+### Watch the application console: you will see retry attempts before the fallback fires.
+GET http://localhost:8080/resilient/employees
+
+###
+
+### Make the flaky stub return 200 (simulates upstream recovery)
+POST http://localhost:8080/stubs/flaky/recover
+
+###
+
+### Make the flaky stub return 503 again (simulates upstream going down)
+POST http://localhost:8080/stubs/flaky/fail
+
+
+### Should return: {"message":"Authenticated successfully"}
+GET http://localhost:8080/auth/ping

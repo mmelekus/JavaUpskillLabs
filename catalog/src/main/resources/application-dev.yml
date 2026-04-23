@@ -1,0 +1,4 @@
+# Overlays application.yml when the 'dev' profile is active
+catalog:
+  environment-label: development
+  page-size-default: 5   # smaller pages for easier inspection during development

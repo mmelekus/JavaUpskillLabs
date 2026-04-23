@@ -1,0 +1,84 @@
+### Client Credentials token -- service identity, no user involved.
+### The Authorization header is Base64("workforce-service:workforce-service-secret").
+POST http://localhost:9000/oauth2/token
+Authorization: Basic d29ya2ZvcmNlLXNlcnZpY2U6d29ya2ZvcmNlLXNlcnZpY2Utc2VjcmV0
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&scope=read:employees
+
+###
+
+### Authorization Code flow -- Step 1.
+### Open the URL below manually in your browser (do not run it as an HTTP request).
+### Log in as alice / password and approve the scopes on the consent screen.
+### The browser redirects to http://127.0.0.1:9000/authorized?code=XXXX
+### Copy the "code" query parameter value from the URL bar before it expires.
+###
+### URL to open in browser:
+### http://localhost:9000/oauth2/authorize?response_type=code&client_id=workforce-spa&redirect_uri=http://127.0.0.1:9000/authorized&scope=openid%20profile%20read:employees%20write:employees&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=abc123
+
+###
+
+### Authorization Code flow -- Step 2.
+### Replace CODE_FROM_BROWSER with the value from the browser URL bar.
+### The code_verifier matches the code_challenge in the URL above.
+POST http://localhost:9000/oauth2/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=OvQ-xsE8n8SzHEw1zMy8wfrZ5KQ22ych8uHwuVdJ7tUiRrxFY4G9feUjcDCu8yAmwiSdtLmDoNZ_2fKpREqKkrqo64aXoQwhOBdiGUGJu5erQ_CPglgwJj9bE77Ex6Ng
+&redirect_uri=http://127.0.0.1:9000/authorized
+&client_id=workforce-spa
+&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk
+
+
+### Step 1: Obtain a service token (run this first).
+POST http://localhost:9000/oauth2/token
+Authorization: Basic d29ya2ZvcmNlLXNlcnZpY2U6d29ya2ZvcmNlLXNlcnZpY2Utc2VjcmV0
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&scope=read:employees
+
+###
+
+### Step 2: Health endpoint -- no token required, should return 200.
+GET http://localhost:8080/health
+
+###
+
+### Step 3: Employees with no token -- should return 401.
+GET http://localhost:8080/api/v1/employees
+
+###
+
+### Step 4: Employees with a valid token -- should return 200.
+### Paste the access_token from Step 1.
+GET http://localhost:8080/api/v1/employees
+Authorization: Bearer eyJraWQiOiJjNTRjNDRjYi0yNzgxLTRmOGEtODEzOC03NjQ1ZjdkYTNkYTgiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6Indvcmtmb3JjZS1zcGEiLCJuYmYiOjE3NzYyNzg4NDcsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiLCJyZWFkOmVtcGxveWVlcyIsIndyaXRlOmVtcGxveWVlcyJdLCJyb2xlcyI6WyJIUl9NQU5BR0VSIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTc3NjI3OTE0NywiZGVwYXJ0bWVudCI6Ikh1bWFuIFJlc291cmNlcyIsImlhdCI6MTc3NjI3ODg0NywianRpIjoiMzc1NmI2NTMtMmFjMy00YzAxLTllMDUtYzk4NzZhNmYyMGNlIn0.ehZ7-FQ-9OaaOBQdHT6z-lGjzf3yNSPVWKfL6ZWzRfrcUjHkzNqo69ajqQgPvG5HajccSJP7pjL1Yvz0lJWmYwckMBM8sMUhrfxNLFZCZwR4hGgGpZsy486kbrgrSNoQcOTr1cDM26PpI5GbGomUc3Gswx55lATIMb2ZAojwyah5mrAskhAs5PX586Oqs_V_DJI6HG03ys_uSg0osSRkmixOs5ZzXw2wvB63vLsJnhNJT3zYbXpzoGWYQHUYCOIfnPcITxwIvnYO1TzcO-x7AuhlQct1JkaT3gYgvt6C6rEHbo4BhS82jWSPFL8I9SUGXhYNcMDyWuEgFfT9dxLpEQ
+
+###
+
+### Step 5: POST with read scope only -- should return 403.
+### The service token has read:employees but NOT write:employees.
+POST http://localhost:8080/api/v1/employees
+Authorization: Bearer eyJraWQiOiJjNTRjNDRjYi0yNzgxLTRmOGEtODEzOC03NjQ1ZjdkYTNkYTgiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6Indvcmtmb3JjZS1zcGEiLCJuYmYiOjE3NzYyNjY1OTcsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiLCJyZWFkOmVtcGxveWVlcyIsIndyaXRlOmVtcGxveWVlcyJdLCJyb2xlcyI6WyJIUl9NQU5BR0VSIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTc3NjI2Njg5NywiZGVwYXJ0bWVudCI6Ikh1bWFuIFJlc291cmNlcyIsImlhdCI6MTc3NjI2NjU5NywianRpIjoiMDBkYmMyN2EtYTJlYi00MTA2LTkxZWMtYjFlODJlMjUyMjRkIn0.BzrH7hh3WJKyUHIoqO1NF8dOO1MSXs04I6XUr6ieM_sB7Go07sUKj_ta4SWABXzbIApxoLtbxe2k3O7TfVOZl43HEKCvCS831zsq8vMv6_KGFTwu2EplfPKro78g6Ipixf390zg82_7-JVOfJVJ5BwhaeySWbUDPl1dR_Ut0DFrcnjgLbxlEhZLL1_GinLbz7R7kd342xvkzM4w-VjcHw3I1ZME8NuRlksOOmnvdnrxB7pGWhjnOPRk8whniN5V_uP7OKTbO1hsldqa2P9oBIr-WNyXEKJ8acyI0ZZpW2he7K02BUlpxBbLgVwCPdkZpSCMEevuHrnWrRmhVwEcZLQ
+Content-Type: application/json
+
+{
+  "id": "E004",
+  "name": "Dana Park",
+  "department": "Finance",
+  "role": "ANALYST"
+}
+
+### Current identity -- observe which claims are present for a service token.
+GET http://localhost:8080/api/v1/employees/me
+Authorization: Bearer eyJraWQiOiJjNTRjNDRjYi0yNzgxLTRmOGEtODEzOC03NjQ1ZjdkYTNkYTgiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6Indvcmtmb3JjZS1zcGEiLCJuYmYiOjE3NzYyNzg4NDcsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiLCJyZWFkOmVtcGxveWVlcyIsIndyaXRlOmVtcGxveWVlcyJdLCJyb2xlcyI6WyJIUl9NQU5BR0VSIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTc3NjI3OTE0NywiZGVwYXJ0bWVudCI6Ikh1bWFuIFJlc291cmNlcyIsImlhdCI6MTc3NjI3ODg0NywianRpIjoiMzc1NmI2NTMtMmFjMy00YzAxLTllMDUtYzk4NzZhNmYyMGNlIn0.ehZ7-FQ-9OaaOBQdHT6z-lGjzf3yNSPVWKfL6ZWzRfrcUjHkzNqo69ajqQgPvG5HajccSJP7pjL1Yvz0lJWmYwckMBM8sMUhrfxNLFZCZwR4hGgGpZsy486kbrgrSNoQcOTr1cDM26PpI5GbGomUc3Gswx55lATIMb2ZAojwyah5mrAskhAs5PX586Oqs_V_DJI6HG03ys_uSg0osSRkmixOs5ZzXw2wvB63vLsJnhNJT3zYbXpzoGWYQHUYCOIfnPcITxwIvnYO1TzcO-x7AuhlQct1JkaT3gYgvt6C6rEHbo4BhS82jWSPFL8I9SUGXhYNcMDyWuEgFfT9dxLpEQ
+
+### The downstream endpoint.
+### Inbound: the caller's token authenticates this request.
+### Outbound: the Workforce API obtains its own service token automatically.
+### Watch the Authorization Server console when this executes -- you will see a
+### POST /oauth2/token request arrive from workforce-service.
+GET http://localhost:8080/api/v1/employees/downstream
+Authorization: Bearer eyJraWQiOiI1ZTgzMWU4Zi1mNWY2LTRjNDEtYjQ4YS0xZTg0ZDA1MjJiYjQiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhbGljZSIsImF1ZCI6Indvcmtmb3JjZS1zcGEiLCJuYmYiOjE3NzYyODk2NDAsInNjb3BlIjpbIm9wZW5pZCIsInByb2ZpbGUiLCJyZWFkOmVtcGxveWVlcyIsIndyaXRlOmVtcGxveWVlcyJdLCJyb2xlcyI6WyJIUl9NQU5BR0VSIl0sImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6OTAwMCIsImV4cCI6MTc3NjI4OTk0MCwiZGVwYXJ0bWVudCI6Ikh1bWFuIFJlc291cmNlcyIsImlhdCI6MTc3NjI4OTY0MCwianRpIjoiOWRmNTA4MWUtMDBlMC00MTg1LWFmNzktNzA0YjAxOTQ2MjdlIn0.DWUS217KjpZ0dUKCSTZSpNXKan36hUve_AphbmDwsr0odQfqem8A8_lrycfrLs02RDhd86L23WJcI041PJlwxLO9KXmHHtNkFh5wrODlIxMIjstZw3jLTz0GM31pDvAkFyQ2bwv11y1SJ6zrKcuPufhVbOz2y9vxOCLKCuRBR53b33ShgPEOoVIC3mLghV0fjCm7ZiiKw4C6UbgvJCwRs0YQVcFspZTPoQz_-Bcqy21H3YC-pNHwifF2OCovEp-f_h_11EACGVlswxInywlDrGnGyW0RmIFiMJjgvunI9ysPY3XPVQ60_UomaqzLf-8HXH3OBM6YdUC5HZ26SJC7RA

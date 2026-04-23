@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: apiclient
+
+logging:
+  level:
+    com.example.apiclient: DEBUG
+
+resilience4j:
+
+  # Retry: attempt failed calls up to 3 times before giving up.
+  retry:
+    instances:
+      upstream-api:
+        max-attempts: 3
+        wait-duration: 500ms
+        # Exponential backoff doubles the wait after each failure:
+        # attempt 1 fails -> wait 500ms, attempt 2 fails -> wait 1000ms, attempt 3 fails -> propagate
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        exponential-max-wait-duration: 5s
+        # Only retry on these exceptions.
+        # 4xx client errors are not listed - retrying them will never help.
+        retry-exceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException.ServiceUnavailable
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+
+  # Circuit Breaker: stop calling a failing upstream when it is clearly struggling.
+  circuit-breaker:
+    instances:
+      upstream-api:
+        # Evaluate the last 10 calls to decide whether to open the circuit.
+        sliding-window-size: 10
+        # Open the circuit if 50% or more of the last 10 calls fail.
+        failure-rate-threshold: 50
+        # Allow 2 probe requests through the half-open state to test recovery.
+        permitted-number-of-calls-in-half-open-state: 2
+        # Wait 30 seconds in the open state before moving to half-open.
+        wait-duration-in-open-state: 30s
+        # Count all exceptions as failures toward the threshold.
+        record-exceptions:
+          - java.lang.Exception
+
+upstream:
+  api:
+    # In a real deployment this value comes from an environment variable or a secrets manager.
+    # It is in application.yml here for exercise purposes only.
+    # Never commit real credentials to source control.
+    token: "exercise-static-bearer-token"
+    base-url: "http://localhost:8081"

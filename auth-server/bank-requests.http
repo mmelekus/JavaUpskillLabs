@@ -1,0 +1,17 @@
+### Obtain a read-only token.
+### Authorization header is Base64("bank-client-read:bank-client-read-secret").
+POST http://localhost:9000/oauth2/token
+Authorization: Basic YmFuay1jbGllbnQtcmVhZDpiYW5rLWNsaWVudC1yZWFkLXNlY3JldA==
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&scope=read:accounts read:transactions
+
+###
+
+### Obtain a full-access token.
+### Authorization header is Base64("bank-client-full:bank-client-full-secret").
+POST http://localhost:9000/oauth2/token
+Authorization: Basic YmFuay1jbGllbnQtZnVsbDpiYW5rLWNsaWVudC1mdWxsLXNlY3JldA==
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=client_credentials&scope=read:accounts read:transactions write:accounts write:transactions admin:users

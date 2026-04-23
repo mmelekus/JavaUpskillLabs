@@ -1,0 +1,68 @@
+### List all categories (ordered by name - native query)
+GET http://localhost:8080/api/v1/categories
+
+###
+
+### Get a single category
+GET http://localhost:8080/api/v1/categories/1
+
+###
+
+### List all active products (JOIN FETCH query - one SQL statement)
+GET http://localhost:8080/api/v1/products
+
+###
+
+### Get a single product
+GET http://localhost:8080/api/v1/products/1
+
+###
+
+### Create a new product
+POST http://localhost:8080/api/v1/products
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "name": "Mechanical Keyboard TKL",
+  "sku": "KBD-MK-008",
+  "price": 89.99,
+  "stockQty": 60
+}
+
+###
+
+### Adjust stock (delta can be positive or negative)
+PATCH http://localhost:8080/api/v1/products/1/stock
+Content-Type: application/json
+
+{
+  "delta": -5
+}
+
+###
+
+### Deactivate a product (soft delete)
+DELETE http://localhost:8080/api/v1/products/7
+
+###
+
+### Create a duplicate category to trigger the duplicate check
+POST http://localhost:8080/api/v1/categories
+Content-Type: application/json
+
+{
+  "name": "Electronics",
+  "description": "Duplicate attempt"
+}
+
+###
+
+### Create a new category successfully
+POST http://localhost:8080/api/v1/categories
+Content-Type: application/json
+
+{
+  "name": "Peripherals",
+  "description": "Keyboards, mice, and monitors"
+}
