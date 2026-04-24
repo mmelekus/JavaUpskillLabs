@@ -1,0 +1,17 @@
+### Count open tickets for department 1 (Infrastructure - expect 2)
+GET http://localhost:8080/api/v1/departments/1/open-ticket-count
+
+###
+
+### Count open tickets for department 2 (Application Support - expect 1)
+GET http://localhost:8080/api/v1/departments/2/open-ticket-count
+
+###
+
+### Count open tickets for department 3 (Security - expect 1)
+GET http://localhost:8080/api/v1/departments/3/open-ticket-count
+
+###
+
+### Non-existent department - Oracle returns 0 for COUNT(*) with no matching rows
+GET http://localhost:8080/api/v1/departments/999/open-ticket-count

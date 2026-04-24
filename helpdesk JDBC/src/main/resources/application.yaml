@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: helpdesk
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/XEPDB1
+    username: labuser
+    password: labpass123
+    driver-class-name: oracle.jdbc.OracleDriver
+logging:
+  level:
+    org.springframework.jdbc.core: DEBUG

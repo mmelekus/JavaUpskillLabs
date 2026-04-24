@@ -1,0 +1,63 @@
+### List all departments (ordered by name)
+GET http://localhost:8080/api/v1/departments
+
+###
+
+### Get a single department with all its tickets
+GET http://localhost:8080/api/v1/departments/1
+
+###
+
+### Get a department that does not exist
+GET http://localhost:8080/api/v1/departments/999
+
+###
+
+### Create a new department
+POST http://localhost:8080/api/v1/departments
+Content-Type: application/json
+
+{
+  "name": "Database Administration",
+  "location": "Floor 5"
+}
+
+###
+
+### Attempt to create a duplicate department - should return 400
+POST http://localhost:8080/api/v1/departments
+Content-Type: application/json
+
+{
+  "name": "Security",
+  "location": "Floor 1"
+}
+
+###
+
+### Add a ticket to a department
+POST http://localhost:8080/api/v1/departments/1/tickets
+Content-Type: application/json
+
+{
+  "title": "Disk space alert on backup server",
+  "description": "Backup drive at 94% capacity. Archiving required.",
+  "priority": "HIGH"
+}
+
+###
+
+### Resolve a ticket (replace 1 with actual ticket IDs from previous responses)
+PATCH http://localhost:8080/api/v1/departments/1/tickets/2/resolve
+
+###
+
+### Invalid priority - should return 400 from Bean Validation
+POST http://localhost:8080/api/v1/departments/1/tickets
+Content-Type: application/json
+
+{
+  "title": "Test ticket",
+  "description": "Invalid priority value",
+  "priority": "URGENT"
+}
