@@ -34,10 +34,6 @@ public class ProductService {
         return new ArrayList<Product>(store.values());
     }
 
-//    public Optional<Product> findById(String id) {
-//        return Optional.ofNullable(store.get(id));
-//    }
-
     public Optional<Product> findById(String id) {
         // TODO 16: Look up the product in the store.
         // If found, return it directly (not wrapped in Optional -- the exception handles the missing case).
