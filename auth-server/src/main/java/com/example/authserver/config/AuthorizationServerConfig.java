@@ -217,11 +217,43 @@ public class AuthorizationServerConfig {
                         .build())
                 .build();
 
+        RegisteredClient bankClientBff = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("bank-client-bff")
+                // {noop} tells Spring not to hash this value.
+                // Development only; never use {noop} in production.
+                .clientSecret("{noop}bank-client-bff-secret")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                // Authorization Code flow for user-facing login,
+                // plus refresh tokens so the BFF can refresh access tokens silently.
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                // Where the auth server is allowed to redirect the user after login.
+                // Spring Security on the BFF auto-exposes this URL pattern.
+                .redirectUri("http://localhost:8080/login/oauth2/code/bank-auth")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.PROFILE)
+                .scope("read:accounts")
+                .scope("read:transactions")
+                .scope("write:accounts")
+                .scope("write:transactions")
+                .clientSettings(ClientSettings.builder()
+                        // Skip the consent screen for this lab to keep the
+                        // login flow short. In a real customer-facing app
+                        // you would typically require consent.
+                        .requireAuthorizationConsent(false)
+                        .build())
+                .tokenSettings(TokenSettings.builder()
+                        .accessTokenTimeToLive(Duration.ofMinutes(60))
+                        .refreshTokenTimeToLive(Duration.ofDays(1))
+                        .build())
+                .build();
+
         return new InMemoryRegisteredClientRepository(
                 workforceSpa,
                 workforceService,
                 bankClientRead,
-                bankClientFull);
+                bankClientFull,
+                bankClientBff);
     }
 
     // -------------------------------------------------------------------------
