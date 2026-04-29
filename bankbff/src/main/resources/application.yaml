@@ -1,3 +1,37 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: bankbff
+
+  security:
+    oauth2:
+      client:
+        registration:
+          bank-auth:
+            client-id: bank-client-bff
+            client-secret: bank-client-bff-secret
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - read:accounts
+              - read:transactions
+              - write:accounts
+              - write:transactions
+
+        provider:
+          bank-auth:
+            issuer-uri: http://localhost:9000
+
+banking:
+  resource-server:
+    base-url: http://localhost:8081
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: DEBUG
+    com.example.bankbff: DEBUG
