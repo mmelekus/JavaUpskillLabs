@@ -1,0 +1,2 @@
+### Unauthenticated request -- expect 401
+GET http://localhost:8081/accounts
