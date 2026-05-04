@@ -1,13 +1,4 @@
-/**
- * AccountList component (completed solution).
- *
- * Displays the customer's accounts in a table. Receives the accounts
- * data and loading/error state from its parent. This is a "presentational"
- * component: given props, it renders markup with no internal state.
- */
-
 import type { Account } from '../api/types';
-import { formatCurrency } from '../utils/format';
 
 type AccountListProps = {
   accounts: Account[];
@@ -21,7 +12,11 @@ export function AccountList({ accounts, loading, error }: AccountListProps) {
   }
 
   if (error) {
-    return <p className="status-message error">Error: {error}</p>;
+    return <p className="error-message">Error loading accounts: {error}</p>;
+  }
+
+  if (accounts.length === 0) {
+    return <p className="status-message">No accounts found.</p>;
   }
 
   return (
@@ -42,7 +37,7 @@ export function AccountList({ accounts, loading, error }: AccountListProps) {
               <td>{account.accountNumber}</td>
               <td>{account.type}</td>
               <td>{account.status}</td>
-              <td>{formatCurrency(account.balance)}</td>
+              <td>${account.balance.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>

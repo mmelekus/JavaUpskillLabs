@@ -28,7 +28,7 @@ Accept: application/json
 ###   - Copy the JSESSIONID value.
 ###############################################################################
 
-@sessionCookie = JSESSIONID=PASTE_THE_COOKIE_VALUE_HERE
+@sessionCookie = BFF_SESSION=E619190D729D07D6A2DC8B5819F99666
 
 
 ###############################################################################
@@ -76,3 +76,31 @@ Cookie: {{sessionCookie}}
 GET {{bff}}/api/me
 Accept: application/json
 Cookie: {{sessionCookie}}
+
+### Try a transfer without a CSRF token. Should fail with 403.
+# @no-cookie-jar
+POST http://localhost:8080/api/transfers
+Accept: application/json
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+
+{
+  "fromAccountNumber": "ACC-001",
+  "toAccountNumber": "ACC-002",
+  "amount": 25.00
+}
+
+### Try a transfer WITH a CSRF token. Should succeed.
+# @no-cookie-jar
+POST http://localhost:8080/api/transfers
+Accept: application/json
+Content-Type: application/json
+Cookie: {{sessionCookie}}
+Cookie: XSRF-TOKEN=f4a8b09e-a41d-4b5a-a4fb-dfcbe303cd39
+X-XSRF-TOKEN: f4a8b09e-a41d-4b5a-a4fb-dfcbe303cd39
+
+{
+  "fromAccountNumber": "ACC-001",
+  "toAccountNumber": "ACC-002",
+  "amount": 25.00
+}

@@ -1,54 +1,66 @@
 /**
- * App component (completed solution).
+ * Root component.
  *
- * Owns the accounts state and shares it between AccountList (read-only
- * display) and TransferForm (write actions). After a successful transfer
- * the form invokes loadAccounts to refresh the displayed balances.
+ * Reads the auth state and decides what to render:
+ *  - loading: show a loading message
+ *  - not logged in: show the SignInScreen
+ *  - logged in: show the accounts list and transfer form
+ *
+ * App.tsx now owns the accounts data. It loads accounts after the
+ * user is authenticated and passes the data down to AccountList
+ * and TransferForm as props. After a successful transfer, the
+ * onTransferComplete callback re-fetches accounts so balances update.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { Header } from './components/Header';
 import { AccountList } from './components/AccountList';
 import { TransferForm } from './components/TransferForm';
+import { SignInScreen } from './components/SignInScreen';
+import { useAuth } from './auth/AuthContext';
 import { getAccounts } from './api/client';
 import type { Account } from './api/types';
 import './App.css';
 
 export function App() {
+  const { user, loading: authLoading } = useAuth();
+
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [accountsLoading, setAccountsLoading] = useState<boolean>(false);
+  const [accountsError, setAccountsError] = useState<string | null>(null);
 
   const loadAccounts = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    setAccountsLoading(true);
+    setAccountsError(null);
     try {
       const data = await getAccounts();
       setAccounts(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      setAccountsError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setAccountsLoading(false);
     }
   }, []);
 
+  // Load accounts once a user becomes available.
   useEffect(() => {
-    loadAccounts();
-  }, [loadAccounts]);
+    if (user) {
+      loadAccounts();
+    }
+  }, [user, loadAccounts]);
 
   return (
     <div className="app">
       <Header />
       <main>
-        <AccountList
-          accounts={accounts}
-          loading={loading}
-          error={error}
-        />
-        <TransferForm
-          accounts={accounts}
-          onTransferComplete={loadAccounts}
-        />
+        {authLoading && <p className="status-message">Checking sign-in state...</p>}
+        {!authLoading && !user && <SignInScreen />}
+        {!authLoading && user && (
+          <>
+            <AccountList accounts={accounts} loading={accountsLoading} error={accountsError} />
+            <TransferForm accounts={accounts} onTransferComplete={loadAccounts} />
+          </>
+        )}
       </main>
     </div>
   );

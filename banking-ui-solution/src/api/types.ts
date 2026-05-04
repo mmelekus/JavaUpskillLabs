@@ -1,9 +1,5 @@
 /**
  * TypeScript types for the banking API.
- *
- * These types describe the shape of the data exchanged with the backend.
- * They are imported by the API client and by components that work with
- * accounts, customers, and transactions.
  */
 
 export type AccountStatus = 'ACTIVE' | 'INACTIVE';
@@ -44,4 +40,11 @@ export type TransferRequest = {
 export type TransferResponse = {
   transactionId: string;
   status: TransactionStatus;
+};
+
+// New: matches the UserInfoDto returned by the BFF's /api/me endpoint.
+export type User = {
+  username: string;
+  name: string;
+  roles: string[];
 };

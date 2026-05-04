@@ -1,16 +1,6 @@
-/**
- * TransferForm component (completed solution).
- *
- * Lets the customer transfer funds between accounts. Filters out
- * inactive accounts from the source dropdown. After a successful
- * transfer, calls onTransferComplete so the parent can refresh the
- * displayed balances.
- */
-
 import { useState } from 'react';
 import { postTransfer } from '../api/client';
 import type { Account } from '../api/types';
-import { formatCurrency } from '../utils/format';
 
 type TransferFormProps = {
   accounts: Account[];
@@ -21,88 +11,79 @@ export function TransferForm({ accounts, onTransferComplete }: TransferFormProps
   const [fromAccount, setFromAccount] = useState<string>('');
   const [toAccount, setToAccount] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
 
-  const activeAccounts = accounts.filter((a) => a.status === 'ACTIVE');
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    setSubmitting(true);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setMessage(null);
     setMessageType(null);
 
+    const amountNumber = parseFloat(amount);
+    if (!fromAccount || !toAccount || isNaN(amountNumber) || amountNumber <= 0) {
+      setMessage('Please fill in all fields with valid values.');
+      setMessageType('error');
+      return;
+    }
+
+    if (fromAccount === toAccount) {
+      setMessage('From and to accounts must be different.');
+      setMessageType('error');
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const result = await postTransfer({
         fromAccountNumber: fromAccount,
         toAccountNumber: toAccount,
-        amount: parseFloat(amount),
+        amount: amountNumber,
       });
-
-      if (result.status === 'COMPLETE') {
-        setMessage(`Transfer complete. Transaction ID: ${result.transactionId}`);
-        setMessageType('success');
-        setFromAccount('');
-        setToAccount('');
-        setAmount('');
-        onTransferComplete();
-      } else {
-        setMessage('Transfer failed. Please try again.');
-        setMessageType('error');
-      }
+      setMessage(`Transfer complete. Transaction ID: ${result.transactionId}`);
+      setMessageType('success');
+      setFromAccount('');
+      setToAccount('');
+      setAmount('');
+      onTransferComplete();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Unknown error occurred');
+      setMessage(e instanceof Error ? e.message : 'Transfer failed.');
       setMessageType('error');
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (accounts.length === 0) {
-    return (
-      <section className="transfer-form">
-        <h2>Transfer Money</h2>
-        <p className="status-message">No accounts available for transfer.</p>
-      </section>
-    );
-  }
-
   return (
     <section className="transfer-form">
-      <h2>Transfer Money</h2>
+      <h2>Transfer Funds</h2>
       <form onSubmit={handleSubmit}>
         <div className="form-row">
-          <label htmlFor="fromAccount">From Account</label>
+          <label htmlFor="from-account">From Account</label>
           <select
-            id="fromAccount"
+            id="from-account"
             value={fromAccount}
             onChange={(e) => setFromAccount(e.target.value)}
-            required
           >
-            <option value="">-- Select an account --</option>
-            {activeAccounts.map((account) => (
-              <option key={account.accountNumber} value={account.accountNumber}>
-                {account.accountNumber} ({account.type}) - {formatCurrency(account.balance)}
+            <option value="">-- Select --</option>
+            {accounts.map((a) => (
+              <option key={a.accountNumber} value={a.accountNumber}>
+                {a.accountNumber} ({a.type}, ${a.balance.toFixed(2)})
               </option>
             ))}
           </select>
         </div>
-
         <div className="form-row">
-          <label htmlFor="toAccount">To Account Number</label>
-          <input
-            id="toAccount"
-            type="text"
-            placeholder="Destination account number"
-            value={toAccount}
-            onChange={(e) => setToAccount(e.target.value)}
-            required
-          />
+          <label htmlFor="to-account">To Account</label>
+          <select id="to-account" value={toAccount} onChange={(e) => setToAccount(e.target.value)}>
+            <option value="">-- Select --</option>
+            {accounts.map((a) => (
+              <option key={a.accountNumber} value={a.accountNumber}>
+                {a.accountNumber} ({a.type}, ${a.balance.toFixed(2)})
+              </option>
+            ))}
+          </select>
         </div>
-
         <div className="form-row">
           <label htmlFor="amount">Amount</label>
           <input
@@ -110,19 +91,15 @@ export function TransferForm({ accounts, onTransferComplete }: TransferFormProps
             type="number"
             step="0.01"
             min="0.01"
-            placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            required
           />
         </div>
-
         <button type="submit" disabled={submitting}>
-          {submitting ? 'Submitting...' : 'Transfer'}
+          {submitting ? 'Processing...' : 'Submit Transfer'}
         </button>
-
         {message && (
-          <p className={`form-message ${messageType}`}>
+          <p className={messageType === 'success' ? 'success-message' : 'error-message'}>
             {message}
           </p>
         )}

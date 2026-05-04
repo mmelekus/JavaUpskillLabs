@@ -229,8 +229,14 @@ public class AuthorizationServerConfig {
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 // Where the auth server is allowed to redirect the user after login.
                 // Spring Security on the BFF auto-exposes this URL pattern.
+                // Direct access (Lab 4.6 standalone testing)
                 .redirectUri("http://localhost:8080/login/oauth2/code/bank-auth")
-                .scope(OidcScopes.OPENID)
+                // Through Vite proxy (Lab 4.7 React integration)
+                .redirectUri("http://localhost:5173/login/oauth2/code/bank-auth")
+                // Direct access post-logout (Lab 4.6)
+                .postLogoutRedirectUri("http://localhost:8080/")
+                // Through Vite proxy post-logout (Lab 4.7+)
+                .postLogoutRedirectUri("http://localhost:5173/")                .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .scope("read:accounts")
                 .scope("read:transactions")

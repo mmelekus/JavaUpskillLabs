@@ -1,5 +1,9 @@
 server:
   port: 8080
+  servlet:
+    session:
+      cookie:
+        name: BFF_SESSION
 
 spring:
   application:

@@ -6,11 +6,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 /**
  * Security configuration for the BFF.
@@ -33,8 +37,14 @@ public class SecurityConfig {
                 // CSRF protection is disabled for Lab 4.6 for simplicity.
                 // Lab 4.7 will turn it on with a cookie-based token repository
                 // appropriate for the React SPA.
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(csrf -> {
+                    CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
+                    csrfHandler.setCsrfRequestAttributeName(null);
 
+                    csrf
+                            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                            .csrfTokenRequestHandler(csrfHandler);
+                })
         // TODO 4.1: Configure authorization rules.
         //
         // Use .authorizeHttpRequests() to declare:
@@ -86,9 +96,24 @@ public class SecurityConfig {
         //
         // Pattern:
         //   .logout(Customizer.withDefaults())
-                .logout(Customizer.withDefaults())
-        ;
+                .logout(logout -> logout
+                        .logoutSuccessHandler(oidcLogoutSuccessHandler(
+                                http.getSharedObject(ClientRegistrationRepository.class))));        ;
 
         return http.build();
+    }
+
+    @Bean
+    public LogoutSuccessHandler oidcLogoutSuccessHandler(
+            ClientRegistrationRepository clientRegistrationRepository) {
+
+        OidcClientInitiatedLogoutSuccessHandler handler =
+                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+
+        // After the auth server completes logout, send the browser back here.
+        // Must match a postLogoutRedirectUri registered on the auth server.
+        handler.setPostLogoutRedirectUri("http://localhost:5173/");
+
+        return handler;
     }
 }
