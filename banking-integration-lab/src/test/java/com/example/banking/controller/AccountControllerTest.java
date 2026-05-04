@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oauth2Login;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -58,6 +59,12 @@ class AccountControllerTest {
     // 1. Use mockMvc.perform(get("/api/accounts")) WITHOUT any .with(oauth2Login())
     // 2. Assert .andExpect(status().isUnauthorized())
     // 3. No need to stub accountService -- the request never reaches the controller
+    @Test
+    @DisplayName("Unauthenticated request returns 401")
+    void unauthenticatedRequestReturns401() throws Exception {
+        mockMvc.perform(get("/api/accounts"))
+                .andExpect(status().isUnauthorized());
+    }
 
     // TODO 1.2 -- Test: authenticated request returns 200 with the account list
     //
@@ -67,7 +74,19 @@ class AccountControllerTest {
     // 3. Assert status().isOk()
     // 4. Assert jsonPath("$[0].accountNumber").value("ACC-001")
     // 5. Assert jsonPath("$[0].balance").value(1500.00)
+    @Test
+    @DisplayName("Authenticated request returns 200 with the account list")
+    void authenticatedRequestReturnsAccountList() throws Exception {
+        when(accountService.findAll()).thenReturn(List.of(
+                new Account("ACC-001", "CHECKING", new BigDecimal("1500.00"), "ACTIVE")
+        ));
 
+        mockMvc.perform(get("/api/accounts")
+                        .with(oauth2Login()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].accountNumber").value("ACC-001"))
+                .andExpect(jsonPath("$[0].balance").value(1500.00));
+    }
     // TODO 1.3 -- Test: authenticated request returns an empty list when service has no accounts
     //
     // 1. Stub accountService.findAll() to return List.of()
@@ -75,4 +94,15 @@ class AccountControllerTest {
     // 3. Assert status().isOk()
     // 4. Assert jsonPath("$").isArray()
     // 5. Assert jsonPath("$.length()").value(0)
+    @Test
+    @DisplayName("Authenticated request returns empty list when service has no accounts")
+    void authenticatedRequestReturnsEmptyListWhenServiceHasNoAccounts() throws Exception {
+        when(accountService.findAll()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/accounts")
+                        .with(oauth2Login()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 }

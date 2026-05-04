@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: banking-integration-lab
+
+  # Stub OAuth2 client registration. The lab tests do not exercise
+  # the actual OAuth flow; they use Spring Security's test
+  # post-processors to simulate an authenticated session. The
+  # registration only needs to exist so Spring Security boots
+  # without error.
+  security:
+    oauth2:
+      client:
+        registration:
+          stub-auth:
+            client-id: stub-client-id
+            client-secret: stub-client-secret
+            scope: openid, profile
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-name: Stub Auth
+        provider:
+          stub-auth:
+            authorization-uri: http://localhost:9999/oauth2/authorize
+            token-uri: http://localhost:9999/oauth2/token
+            user-info-uri: http://localhost:9999/userinfo
+            user-name-attribute: sub
+            jwk-set-uri: http://localhost:9999/oauth2/jwks
+
+server:
+  port: 8090
+
+logging:
+  level:
+    org.springframework.security: INFO
