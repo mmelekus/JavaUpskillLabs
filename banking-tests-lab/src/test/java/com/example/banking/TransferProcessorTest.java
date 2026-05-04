@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -52,21 +53,55 @@ class TransferProcessorTest {
     // Act:     call transferProcessor.processTransfer("ACC-001", "ACC-002", new BigDecimal("30.00"))
     // Assert:  verify findById was called once with "ACC-001"
     //          verify findById was called once with "ACC-002"
+    @Test
+    @DisplayName("processTransfer fetches both accounts from the repository")
+    void processTransferFetchesBothAccountsFromRepository() {
+        Account source = new Account("ACC-001", new BigDecimal("100.00"));
+        Account destination = new Account("ACC-002", new BigDecimal("0.00"));
 
+        when(accountRepository.findById("ACC-001")).thenReturn(Optional.of(source));
+        when(accountRepository.findById("ACC-002")).thenReturn(Optional.of(destination));
+
+        transferProcessor.processTransfer("ACC-001", "ACC-002", new BigDecimal("30.00"));
+
+        verify(accountRepository).findById("ACC-001");
+        verify(accountRepository).findById("ACC-002");
+    }
     // TODO 2.2 -- Test: processTransfer saves both accounts after a successful transfer
     //
     // Arrange: stub findById for both accounts
     // Act:     call processTransfer with valid arguments
     // Assert:  verify save was called exactly twice (once per account)
     //          Use verify(accountRepository, times(2)).save(any(Account.class))
+    @Test
+    @DisplayName("processTransfer saves both accounts after a successful transfer")
+    void processTransferSavesBothAccounts() {
+        Account source = new Account("ACC-001", new BigDecimal("100.00"));
+        Account destination = new Account("ACC-002", new BigDecimal("0.00"));
 
+        when(accountRepository.findById("ACC-001")).thenReturn(Optional.of(source));
+        when(accountRepository.findById("ACC-002")).thenReturn(Optional.of(destination));
+
+        transferProcessor.processTransfer("ACC-001", "ACC-002", new BigDecimal("30.00"));
+
+        verify(accountRepository, times(2)).save(any(Account.class));
+    }
     // TODO 2.3 -- Test: processTransfer throws AccountNotFoundException when source is missing
     //
     // Arrange: stub findById("ACC-MISSING") to return Optional.empty()
     // Act + Assert: calling processTransfer should throw AccountNotFoundException
     //               with a message containing "ACC-MISSING"
     // Also assert: verify save was NEVER called (the failure happened before save)
+    @Test
+    @DisplayName("processTransfer throws AccountNotFoundException when source is missing")
+    void processTransferThrowsWhenSourceIsMissing() {
+        when(accountRepository.findById("ACC-MISSING")).thenReturn(Optional.empty());
 
+        assertThatThrownBy(
+                () -> transferProcessor.processTransfer("ACC-MISSING", "ACC-002", new BigDecimal("30.00")))
+            .isInstanceOf(AccountNotFoundException.class)
+            .hasMessageContaining("ACC-MISSING");
+    }
     // TODO 2.4 -- Test: processTransfer captures the saved source account with the updated balance
     //
     // Arrange: stub findById to return real Account objects (so the real
@@ -78,4 +113,29 @@ class TransferProcessorTest {
     //
     // Hint: ArgumentCaptor.getAllValues() returns a List<Account> when
     //       save() was called multiple times.
+    @Test
+    @DisplayName("processTransfer saves the source account with the updated balance")
+    void processTransferSavesSourceWithUpdatedBalance() {
+        // Build a processor with a REAL TransferService so balances actually update
+        TransferService realTransferService = new TransferService();
+        TransferProcessor processor = new TransferProcessor(accountRepository, realTransferService);
+
+        Account source = new Account("ACC-001", new BigDecimal("100.00"));
+        Account destination = new Account("ACC-002", new BigDecimal("0.00"));
+
+        when(accountRepository.findById("ACC-001")).thenReturn(Optional.of(source));
+        when(accountRepository.findById("ACC-002")).thenReturn(Optional.of(destination));
+
+        processor.processTransfer("ACC-001", "ACC-002", new BigDecimal("30.00"));
+
+        ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository, times(2)).save(captor.capture());
+
+        List<Account> saved = captor.getAllValues();
+        Account savedSource = saved.stream()
+            .filter(acc -> acc.getAccountNumber().equals("ACC-001"))
+            .findFirst()
+            .orElseThrow();
+        assertThat(savedSource.getBalance()).isEqualByComparingTo("70.00");
+    }
 }
